@@ -1,9 +1,9 @@
 import CoreUtils from '../modules/CoreUtils'
-import Utils from '../utils/Utils'
+import DataLabels from '../modules/DataLabels'
 import Fill from '../modules/Fill'
 import Filters from '../modules/Filters'
 import Graphics from '../modules/Graphics'
-import DataLabels from '../modules/DataLabels'
+import Utils from '../utils/Utils'
 
 /**
  * ApexCharts Bar Class responsible for drawing both Columns and Bars.
@@ -982,20 +982,43 @@ class Bar {
         // if there is not enough space to draw the label in the bar/column rect, check hideOverflowingLabels property to prevent overflowing on wrong rect
         // Note: This issue is only seen in stacked charts
         if (this.isHorizontal) {
-          barWidth = this.series[i][j] / this.yRatio[this.yaxisIndex]
+          // Use the gridwith to better determine the width of the bar.
+          const factor =
+            w.globals.gridWidth /
+            (Math.abs(w.globals.maxY) + Math.abs(w.globals.minY))
+          barWidth = this.series[i][j] * factor
+
+          // In some cases the label width is small enough to fit inside the bar
+          // But as the label has some padding on the side of the 0 axis it will still fall out
+          // We use this offset for those cases to also not show the label.
+          const offset = 5
 
           // FIXED: Don't always hide the stacked negative side label
           // A negative value will result in a negative bar width
           // Only hide the text when the width is smaller (a higher negative number) than the negative bar width.
           if (
-            (barWidth > 0 && textRects.width / 1.6 > barWidth) ||
-            (barWidth < 0 && textRects.width / 1.6 < barWidth)
+            (barWidth > 0 && (textRects.width + offset) / 1.6 > barWidth) ||
+            (barWidth < 0 && (textRects.width + offset) / 1.6 > -barWidth)
           ) {
             text = ''
           }
         } else {
-          barHeight = this.series[i][j] / this.yRatio[this.yaxisIndex]
-          if (textRects.height / 1.6 > barHeight) {
+          // Use the gridHeight to better determine the height of the bar.
+          const factor =
+            w.globals.gridHeight /
+            (Math.abs(w.globals.maxY) + Math.abs(w.globals.minY))
+
+          barHeight = this.series[i][j] * factor
+
+          // In some cases the label height is small enough to fit inside the bar
+          // But as the label has some padding on the side of the 0 axis it will still fall out
+          // We use this offset for those cases to also not show the label.
+          const offset = 5
+
+          if (
+            (barHeight > 0 && (textRects.height + offset) / 1.6 > barHeight) ||
+            (barHeight < 0 && (textRects.height + offset) / 1.6 > -barHeight)
+          ) {
             text = ''
           }
         }

@@ -3155,9 +3155,9 @@ var _CoreUtils = __webpack_require__(2);
 
 var _CoreUtils2 = _interopRequireDefault(_CoreUtils);
 
-var _Utils = __webpack_require__(0);
+var _DataLabels = __webpack_require__(9);
 
-var _Utils2 = _interopRequireDefault(_Utils);
+var _DataLabels2 = _interopRequireDefault(_DataLabels);
 
 var _Fill = __webpack_require__(4);
 
@@ -3171,9 +3171,9 @@ var _Graphics = __webpack_require__(1);
 
 var _Graphics2 = _interopRequireDefault(_Graphics);
 
-var _DataLabels = __webpack_require__(9);
+var _Utils = __webpack_require__(0);
 
-var _DataLabels2 = _interopRequireDefault(_DataLabels);
+var _Utils2 = _interopRequireDefault(_Utils);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -4078,17 +4078,33 @@ var Bar = function () {
           // if there is not enough space to draw the label in the bar/column rect, check hideOverflowingLabels property to prevent overflowing on wrong rect
           // Note: This issue is only seen in stacked charts
           if (this.isHorizontal) {
-            barWidth = this.series[i][j] / this.yRatio[this.yaxisIndex];
+            // Use the gridwith to better determine the width of the bar.
+            var factor = w.globals.gridWidth / (Math.abs(w.globals.maxY) + Math.abs(w.globals.minY));
+            barWidth = this.series[i][j] * factor;
+
+            // In some cases the label width is small enough to fit inside the bar
+            // But as the label has some padding on the side of the 0 axis it will still fall out
+            // We use this offset for those cases to also not show the label.
+            var offset = 5;
 
             // FIXED: Don't always hide the stacked negative side label
             // A negative value will result in a negative bar width
             // Only hide the text when the width is smaller (a higher negative number) than the negative bar width.
-            if (barWidth > 0 && textRects.width / 1.6 > barWidth || barWidth < 0 && textRects.width / 1.6 < barWidth) {
+            if (barWidth > 0 && (textRects.width + offset) / 1.6 > barWidth || barWidth < 0 && (textRects.width + offset) / 1.6 > -barWidth) {
               text = '';
             }
           } else {
-            barHeight = this.series[i][j] / this.yRatio[this.yaxisIndex];
-            if (textRects.height / 1.6 > barHeight) {
+            // Use the gridHeight to better determine the height of the bar.
+            var _factor = w.globals.gridHeight / (Math.abs(w.globals.maxY) + Math.abs(w.globals.minY));
+
+            barHeight = this.series[i][j] * _factor;
+
+            // In some cases the label height is small enough to fit inside the bar
+            // But as the label has some padding on the side of the 0 axis it will still fall out
+            // We use this offset for those cases to also not show the label.
+            var _offset = 5;
+
+            if (barHeight > 0 && (textRects.height + _offset) / 1.6 > barHeight || barHeight < 0 && (textRects.height + _offset) / 1.6 > -barHeight) {
               text = '';
             }
           }
